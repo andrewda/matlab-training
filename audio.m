@@ -1,9 +1,8 @@
-n = 1024*16;
+n = 1792400;
 options.n = n;
-[x,fs] = audioread('bird.wav', n);
+[x,fs] = audioread('bird.wav');
 
 clf;
 plot(1:n,x);
 axis('tight');
-set_graphic_sizes([], 20);
 title('Signal');
