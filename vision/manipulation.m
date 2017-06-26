@@ -1,7 +1,7 @@
 clear;
 
 % Read image.png
-I = imread('image.png');
+I = imread('image2.png');
 
 % Display image
 imshow(I);
