@@ -32,7 +32,7 @@ for k = 1:length(B)
     
     metric = 4*pi*area/perimeter^2;
     
-    metric_string = sprintf('%2.4f', metric);
+    metric_string = sprintf('%1.2f', metric);
     
     if metric > threshold
         centroid = stats(k).Centroid;
