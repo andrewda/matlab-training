@@ -1,3 +1,5 @@
+clear;
+
 img = imread('image.png');
 
 subplot(2,1,1);

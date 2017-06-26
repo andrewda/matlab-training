@@ -1,3 +1,5 @@
+clear;
+
 RGB = imread('round.png');
 
 I = rgb2gray(RGB);
