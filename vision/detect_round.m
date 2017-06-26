@@ -44,4 +44,3 @@ for k = 1:length(B)
 end
 
 title('Round Objects');
-
