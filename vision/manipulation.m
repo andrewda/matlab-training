@@ -10,7 +10,7 @@ imshow(I);
 [X,Y] = ginput(2);
 
 % Crop image to within those boundaries
-C = imcrop(I, [min(X) min(Y) diff(X) diff(Y)]);
+C = imcrop(I, [min(X) min(Y) abs(diff(X)) abs(diff(Y))]);
 
 % Get new and original sizes
 orig_size = size(I);
