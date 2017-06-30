@@ -51,6 +51,31 @@ function audio_list_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+files = get(hObject, 'String');
+selected = get(hObject, 'Value');
+path = strcat('../src_wavs/', char(files(selected)));
+
+if any(strcmp('player', fieldnames(handles)))
+    stop(handles.player);
+end
+
+[y, Fs] = audioread(path);
+handles.player = audioplayer(y, Fs);
+handles.next_position = -1;
+
+s = create_spectrogram(y, Fs);
+w = whiten_spectrogram(s);
+
+s = imresize(s, [255, 900]);
+axes(handles.spectrogram);
+imshow(s);
+
+w = imresize(w, [255, 900]);
+axes(handles.segment);
+imshow(w);
+
+guidata(hObject, handles);
+
 
 % --- Executes during object creation, after setting all properties.
 function audio_list_CreateFcn(hObject, eventdata, handles)
@@ -58,8 +83,7 @@ function audio_list_CreateFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-files = struct2dataset(dir('./audios/*.wav'));
-
+files = struct2dataset(dir('../src_wavs/*.wav'));
 set(hObject, 'String', files.name);
 
 if ispc && isequal(get(hObject, 'BackgroundColor'), get(0, 'defaultUicontrolBackgroundColor'))
@@ -72,7 +96,16 @@ function audio_slider_Callback(hObject, eventdata, handles)
 % hObject    handle to audio_slider (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+playerinfo = get(handles.player);
+position = playerinfo.TotalSamples * get(hObject, 'Value');
 
+if strcmp(get(handles.player, 'Running'), 'on')
+    stop(handles.player);
+    play(handles.player, round(position));
+else
+    handles.next_position = round(position);
+    guidata(hObject, handles);
+end
 
 % --- Executes during object creation, after setting all properties.
 function audio_slider_CreateFcn(hObject, eventdata, handles)
@@ -81,8 +114,8 @@ function audio_slider_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
+if isequal(get(hObject, 'BackgroundColor'), get(0, 'defaultUicontrolBackgroundColor'))
+    set(hObject, 'BackgroundColor', [.9 .9 .9]);
 end
 
 
@@ -92,6 +125,9 @@ function pause_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+if strcmp(get(handles.player, 'Running'), 'on')
+    pause(handles.player);
+end
 
 % --- Executes on button press in play.
 function play_Callback(hObject, eventdata, handles)
@@ -99,6 +135,24 @@ function play_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+if strcmp(get(handles.player, 'Running'), 'off')
+    if handles.next_position >= 0
+        play(handles.player, handles.next_position);
+
+        handles.next_position = -1;
+        guidata(hObject, handles);
+    else
+        resume(handles.player);
+    end
+        
+    while strcmp(get(handles.player, 'Running'), 'on')
+        playerinfo = get(handles.player);
+        position = playerinfo.CurrentSample / playerinfo.TotalSamples;
+        set(handles.audio_slider, 'Value', position);
+
+        pause(0.5);
+    end
+end
 
 % --- Executes on selection change in labels_list.
 function labels_list_Callback(hObject, eventdata, handles)
@@ -113,6 +167,6 @@ function labels_list_CreateFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
+if ispc && isequal(get(hObject, 'BackgroundColor'), get(0, 'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor', 'white');
 end
