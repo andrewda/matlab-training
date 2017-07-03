@@ -51,30 +51,40 @@ function audio_list_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-files = get(hObject, 'String');
 selected = get(hObject, 'Value');
+files = get(hObject, 'String');
 path = strcat('../src_wavs/', char(files(selected)));
 
 if any(strcmp('player', fieldnames(handles)))
     stop(handles.player);
 end
 
-[y, Fs] = audioread(path);
-handles.player = audioplayer(y, Fs);
-handles.next_position = -1;
+try
+    [y, Fs] = audioread(path);
+    handles.player = audioplayer(y, Fs);
+    handles.next_position = -1;
 
-s = create_spectrogram(y, Fs);
-w = whiten_spectrogram(s);
+    s = create_spectrogram(y, Fs);
+    w = whiten_spectrogram(s);
 
-s = imresize(s, [255, 900]);
-axes(handles.spectrogram);
-imshow(s);
+    s = imresize(s, [255, 950]);
+    axes(handles.spectrogram);
+    imshow(s);
 
-w = imresize(w, [255, 900]);
-axes(handles.segment);
-imshow(w);
+    w = imresize(w, [255, 950]);
+    axes(handles.segment);
+    imshow(w);
 
-guidata(hObject, handles);
+    guidata(hObject, handles);
+catch
+    s = zeros(255, 950);
+    
+    axes(handles.spectrogram);
+    imshow(s);
+    
+    axes(handles.segment);
+    imshow(s);
+end
 
 
 % --- Executes during object creation, after setting all properties.
@@ -84,7 +94,7 @@ function audio_list_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 files = struct2dataset(dir('../src_wavs/*.wav'));
-set(hObject, 'String', files.name);
+set(hObject, 'String', ['Select File'; files.name]);
 
 if ispc && isequal(get(hObject, 'BackgroundColor'), get(0, 'defaultUicontrolBackgroundColor'))
     set(hObject, 'BackgroundColor', 'white');
@@ -107,6 +117,7 @@ else
     guidata(hObject, handles);
 end
 
+
 % --- Executes during object creation, after setting all properties.
 function audio_slider_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to audio_slider (see GCBO)
@@ -128,6 +139,7 @@ function pause_Callback(hObject, eventdata, handles)
 if strcmp(get(handles.player, 'Running'), 'on')
     pause(handles.player);
 end
+
 
 % --- Executes on button press in play.
 function play_Callback(hObject, eventdata, handles)
@@ -153,6 +165,7 @@ if strcmp(get(handles.player, 'Running'), 'off')
         pause(0.5);
     end
 end
+
 
 % --- Executes on selection change in labels_list.
 function labels_list_Callback(hObject, eventdata, handles)
