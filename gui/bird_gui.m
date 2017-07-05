@@ -51,37 +51,45 @@ function audio_list_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Get the selected audio file
 selected = get(hObject, 'Value');
 files = get(hObject, 'String');
 path = strcat('../src_wavs/', char(files(selected)));
 
+% Reset audio slider
+set(handles.audio_slider, 'Value', 0);
+
+% Check if media player exists, and stop it if it does
 if any(strcmp('player', fieldnames(handles)))
     stop(handles.player);
 end
 
 try
+    % Read audio file and create audio plater
     [y, Fs] = audioread(path);
     handles.player = audioplayer(y, Fs);
     handles.next_position = -1;
 
+    % Generate spectrograms
     s = create_spectrogram(y, Fs);
     w = whiten_spectrogram(s);
 
+    % Display spectrograms
     s = imresize(s, [255, 950]);
     axes(handles.spectrogram);
     imshow(s);
-
     w = imresize(w, [255, 950]);
     axes(handles.segment);
     imshow(w);
 
     guidata(hObject, handles);
 catch
+    % Create zeros matrix
     s = zeros(255, 950);
     
+    % Display black boxes if spectrograms fail
     axes(handles.spectrogram);
     imshow(s);
-    
     axes(handles.segment);
     imshow(s);
 end
@@ -93,7 +101,10 @@ function audio_list_CreateFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
+% Get all wav files in src directory
 files = struct2dataset(dir('../src_wavs/*.wav'));
+
+% Set list of audio files
 set(hObject, 'String', ['Select File'; files.name]);
 
 if ispc && isequal(get(hObject, 'BackgroundColor'), get(0, 'defaultUicontrolBackgroundColor'))
@@ -106,9 +117,12 @@ function audio_slider_Callback(hObject, eventdata, handles)
 % hObject    handle to audio_slider (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Get position of audio slider
 playerinfo = get(handles.player);
 position = playerinfo.TotalSamples * get(hObject, 'Value');
 
+% Update audio position
 if strcmp(get(handles.player, 'Running'), 'on')
     stop(handles.player);
     play(handles.player, round(position));
@@ -124,7 +138,6 @@ function audio_slider_CreateFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: slider controls usually have a light gray background.
 if isequal(get(hObject, 'BackgroundColor'), get(0, 'defaultUicontrolBackgroundColor'))
     set(hObject, 'BackgroundColor', [.9 .9 .9]);
 end
@@ -136,6 +149,7 @@ function pause_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Pause the audio if it's running
 if strcmp(get(handles.player, 'Running'), 'on')
     pause(handles.player);
 end
@@ -147,6 +161,7 @@ function play_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Play the audio if it's not already running
 if strcmp(get(handles.player, 'Running'), 'off')
     if handles.next_position >= 0
         play(handles.player, handles.next_position);
@@ -156,7 +171,8 @@ if strcmp(get(handles.player, 'Running'), 'off')
     else
         resume(handles.player);
     end
-        
+    
+    % Update audio slider every .5 seconds
     while strcmp(get(handles.player, 'Running'), 'on')
         playerinfo = get(handles.player);
         position = playerinfo.CurrentSample / playerinfo.TotalSamples;
