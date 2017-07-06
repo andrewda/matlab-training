@@ -22,18 +22,18 @@ for n = 1:length(audio_cells)
         fbins = fbins_per_fft * window;
         dn = round((1 - overlap_ratio) * window);
         [s, f, t] = spectrogram(audio(:, 1), window, window - dn, fbins, Fs);
-
+        
         % Use only 4000Hz to 12000Hz
-        idx = find(f >= 4000 & f < 12000);
+        idx = find(f >= 100 & f < 3750);
         s = s(idx, :);
         f = f(idx);
-
+        
         % Get the absolute value of the spectrogram
         v = abs(s(:));
 
         % Flip the spectrogram
         s = flipud(s);
-
+        
         % Scale to use decibels
         scale = 20 * log10(abs(s) / median(v) + 0.1);
         s = (scale + 20) / 80;

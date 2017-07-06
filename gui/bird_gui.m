@@ -29,6 +29,7 @@ function bird_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for bird_gui
 handles.output = hObject;
+handles.birds = readtable('./birds.csv', 'Delimiter', ',');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -56,6 +57,9 @@ selected = get(hObject, 'Value');
 files = get(hObject, 'String');
 path = strcat('../src_wavs/', char(files(selected)));
 
+box_file = split(files(selected), '.');
+box_path = strcat('../hja_iris_rects/', char(box_file(1)), '.txt');
+
 % Reset audio slider
 set(handles.audio_slider, 'Value', 0);
 
@@ -69,29 +73,59 @@ try
     [y, Fs] = audioread(path);
     handles.player = audioplayer(y, Fs);
     handles.next_position = -1;
+    
+    % Read box positions
+    data = load(box_path);
 
-    % Generate spectrograms
+    % Generate spectrogram
     s = create_spectrogram(y, Fs);
     w = whiten_spectrogram(s);
 
-    % Display spectrograms
-    s = imresize(s, [255, 950]);
+    colormap(gray)
+    
+    % Display initial spectrogram
     axes(handles.spectrogram);
-    imshow(s);
-    w = imresize(w, [255, 950]);
+    imagesc(w);
+    
     axes(handles.segment);
-    imshow(w);
+    imagesc(w);
+    hold on;
+    
+    % Label spectrogram
+    birds_list = {};
+    handles.current_birds = [];
+        
+    for i = 1:size(data, 1)    
+        % x,y,w,h
+        rect = [data(i, 1), ...
+                data(i, 2), ...
+                data(i, 3) - data(i, 1), ...
+                data(i, 4) - data(i, 2)];
+            
+        rectangle('Position', rect, 'EdgeColor', 'red')
+        
+        handles.size = size(w, 2);
+        % Bird, Start, End
+        handles.current_birds = [handles.current_birds; {char(table2cell(handles.birds(data(i, 5), 2))), data(i, 1), data(i, 3)}];
+        
+        birds_list{end+1} = char(table2cell(handles.birds(data(i, 5), 2)));
+    end
+    
+    % Display bird names
+    set(handles.bird_names, 'String', sort(unique(birds_list(:))));
 
     guidata(hObject, handles);
 catch
     % Create zeros matrix
-    s = zeros(255, 950);
+    s = zeros(233, 624);
+    
+    colormap(gray);
     
     % Display black boxes if spectrograms fail
     axes(handles.spectrogram);
-    imshow(s);
+    imagesc(s);
     axes(handles.segment);
-    imshow(s);
+    imagesc(s);
 end
 
 
@@ -177,8 +211,22 @@ if strcmp(get(handles.player, 'Running'), 'off')
         playerinfo = get(handles.player);
         position = playerinfo.CurrentSample / playerinfo.TotalSamples;
         set(handles.audio_slider, 'Value', position);
+        
+        pixel_position = handles.size * position;
+        set_bird = false;
+        
+        for i = 1:size(handles.current_birds)
+            if pixel_position > cell2mat(handles.current_birds(i, 2)) && pixel_position < cell2mat(handles.current_birds(i, 3))
+                set_bird = true;
+                set(handles.bird_name, 'String', handles.current_birds(i, 1))
+            end
+        end
+        
+        if ~set_bird
+            set(handles.bird_name, 'String', 'No Bird');
+        end
 
-        pause(0.5);
+        pause(0.25);
     end
 end
 
